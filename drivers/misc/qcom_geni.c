@@ -514,7 +514,7 @@ static int qcom_geni_fw_initialise(void)
 		}
 	}
 	if (!geni_wrapper) {
-		pr_err("GENI SE wrapper not found\n");
+		debug("GENI SE wrapper not found - no GENI firmware load needed\n");
 		return 0;
 	}
 
