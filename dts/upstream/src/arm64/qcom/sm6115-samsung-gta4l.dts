@@ -42,7 +42,7 @@
 		#size-cells = <2>;
 		ranges;
 
-		bootargs = "console=tty0 clk_ignore_unused pd_ignore_unused fbcon=rotate:1 nr_cpus=1 nokaslr pmos.stowaway pmos_root_uuid=cbaf0abb-f8e8-448d-9293-b20d6d6ddbb0 pmos_rootfsopts=defaults";
+		bootargs = "console=tty0 clk_ignore_unused pd_ignore_unused fbcon=rotate:1 nr_cpus=1 nokaslr pmos.stowaway pmos.root=/dev/mmcblk0p80 pmos_rootfsopts=defaults";
 
 		stdout-path = "framebuffer0";
 
