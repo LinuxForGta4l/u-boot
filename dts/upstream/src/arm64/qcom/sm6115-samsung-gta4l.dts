@@ -291,10 +291,42 @@
 };
 
 &mdss {
-	/* The msm DRM driver would probe the display pipeline and blank the
-	 * panel, killing the simple-framebuffer scanout left by the
-	 * bootloader. Keep it disabled so fbcon can use the simplefb. */
-	status = "disabled";
+	/* msm DRM drives the NT36523 panel via DSI (needed by GNOME/Mutter).
+	 * u-boot's own console uses the simplefb left by ABL. */
+	status = "okay";
+};
+
+&mdss_dsi0 {
+	vdda-supply = <&pm6125_l18a>;
+	status = "okay";
+
+	panel: panel@0 {
+		compatible = "samsung,gta4l-nt36523-lide-hsd", "novatek,nt36523w";
+		reg = <0>;
+
+		reset-gpios = <&tlmm 81 GPIO_ACTIVE_LOW>;
+		vddio-supply = <&pm6125_l9a>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&mdss_dsi_n>;
+
+		rotation = <180>;
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&mdss_dsi0_out>;
+			};
+		};
+	};
+};
+
+&mdss_dsi0_out {
+	data-lanes = <0 1 2 3>;
+	remote-endpoint = <&panel_in>;
+};
+
+&mdss_dsi0_phy {
+	status = "okay";
 };
 
 &sdhc_1 {
