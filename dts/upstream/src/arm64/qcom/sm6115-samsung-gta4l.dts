@@ -42,7 +42,7 @@
 		#size-cells = <2>;
 		ranges;
 
-		bootargs = "console=tty0 clk_ignore_unused pd_ignore_unused fbcon=rotate:1 nr_cpus=1 nokaslr pmos.stowaway pmos.root=/dev/mmcblk0p80 pmos_rootfsopts=defaults";
+		bootargs = "console=tty0 clk_ignore_unused pd_ignore_unused fbcon=rotate:1 nr_cpus=1 nokaslr loglevel=7 pmos.stowaway pmos.root=/dev/mmcblk0p80 pmos_rootfsopts=defaults";
 
 		stdout-path = "framebuffer0";
 
@@ -291,22 +291,22 @@
 };
 
 &mdss {
-	/* msm DRM drives the NT36523 panel via DSI (needed by GNOME/Mutter).
-	 * u-boot's own console uses the simplefb left by ABL. */
-	status = "okay";
+	/* The msm DRM driver probes the display pipeline and blanks the
+	 * panel, killing the simple-framebuffer scanout left by the
+	 * bootloader. Keep it disabled so fbcon + swrast (pure software
+	 * rendering) drive the display. */
+	status = "disabled";
 };
 
 &gpu {
-	status = "okay";
-
-	zap-shader {
-		firmware-name = "qcom/sm6115/a610_zap.mbn";
-	};
+	/* Adreno GPU + msm DRM not yet validated on this panel; keep the
+	 * working software-rendering path (mdss disabled) until then. */
+	status = "disabled";
 };
 
 &mdss_dsi0 {
 	vdda-supply = <&pm6125_l18a>;
-	status = "okay";
+	status = "disabled";
 
 	panel: panel@0 {
 		compatible = "samsung,gta4l-nt36523-lide-hsd", "novatek,nt36523w";
@@ -334,7 +334,7 @@
 };
 
 &mdss_dsi0_phy {
-	status = "okay";
+	status = "disabled";
 };
 
 &sdhc_1 {
