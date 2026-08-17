@@ -459,7 +459,7 @@
 
 	novatek@62 {
 		compatible = "novatek,NVT-ts";
-		reg = <0x62>;
+		reg = <0x63>;
 		interrupt-parent = <&tlmm>;
 		interrupts = <50 IRQ_TYPE_LEVEL_LOW>;
 		reset-gpios = <&tlmm 47 GPIO_ACTIVE_LOW>;
