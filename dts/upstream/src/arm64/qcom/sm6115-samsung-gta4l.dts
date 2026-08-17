@@ -42,7 +42,7 @@
 		#size-cells = <2>;
 		ranges;
 
-		bootargs = "console=tty0 clk_ignore_unused pd_ignore_unused fbcon=rotate:1 nr_cpus=1 nokaslr loglevel=7 pmos.stowaway pmos.root=/dev/mmcblk0p80 pmos_rootfsopts=defaults";
+		bootargs = "console=tty0 clk_ignore_unused pd_ignore_unused fbcon=rotate:1 nr_cpus=1 nokaslr loglevel=7 pmos.stowaway pmos.root=/dev/mmcblk1p1 pmos_rootfsopts=defaults";
 
 		stdout-path = "framebuffer0";
 
@@ -205,6 +205,7 @@
 		pm6125_l9a: l9 {
 			regulator-min-microvolt = <1800000>;
 			regulator-max-microvolt = <2000000>;
+			regulator-always-on;
 		};
 
 		pm6125_l10a: l10 {
@@ -371,7 +372,7 @@
 	vmmc-supply = <&pm6125_l22a>;
 	vqmmc-supply = <&pm6125_l5a>;
 
-	status = "disabled";
+	status = "okay";
 };
 
 &soc {
@@ -440,6 +441,18 @@
 &usb_qmpphy_out {
 	remote-endpoint = <&pmi632_ss_in>;
 };
+&qupv3_id_0 {
+	status = "okay";
+};
+
+&gpi_dma0 {
+	status = "okay";
+};
+
+&pm6125_rtc {
+	status = "okay";
+};
+
 &i2c2 {
 	status = "okay";
 	clock-frequency = <400000>;
