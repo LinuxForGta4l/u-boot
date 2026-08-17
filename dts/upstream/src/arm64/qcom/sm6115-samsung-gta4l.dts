@@ -42,7 +42,7 @@
 		#size-cells = <2>;
 		ranges;
 
-		bootargs = "console=tty0 clk_ignore_unused pd_ignore_unused fbcon=rotate:1 nr_cpus=1 nokaslr pmos.stowaway pmos_root_uuid=cbaf0abb-f8e8-448d-9293-b20d6d6ddbb0 pmos_rootfsopts=defaults";
+		bootargs = "console=tty0 clk_ignore_unused pd_ignore_unused fbcon=rotate:1 nr_cpus=1 nokaslr loglevel=7 pmos.stowaway pmos.root=/dev/mmcblk1p1 pmos_rootfsopts=defaults";
 
 		stdout-path = "framebuffer0";
 
@@ -205,6 +205,7 @@
 		pm6125_l9a: l9 {
 			regulator-min-microvolt = <1800000>;
 			regulator-max-microvolt = <2000000>;
+			regulator-always-on;
 		};
 
 		pm6125_l10a: l10 {
@@ -291,9 +292,49 @@
 };
 
 &mdss {
-	/* The msm DRM driver would probe the display pipeline and blank the
+	/* The msm DRM driver probes the display pipeline and blanks the
 	 * panel, killing the simple-framebuffer scanout left by the
-	 * bootloader. Keep it disabled so fbcon can use the simplefb. */
+	 * bootloader. Keep it disabled so fbcon + swrast (pure software
+	 * rendering) drive the display. */
+	status = "disabled";
+};
+
+&gpu {
+	/* Adreno GPU + msm DRM not yet validated on this panel; keep the
+	 * working software-rendering path (mdss disabled) until then. */
+	status = "disabled";
+};
+
+&mdss_dsi0 {
+	vdda-supply = <&pm6125_l18a>;
+	status = "disabled";
+
+	panel: panel@0 {
+		compatible = "samsung,gta4l-nt36523-lide-hsd", "novatek,nt36523w";
+		reg = <0>;
+
+		reset-gpios = <&tlmm 81 GPIO_ACTIVE_LOW>;
+		vddio-supply = <&pm6125_l9a>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&mdss_dsi_n>;
+
+		rotation = <180>;
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&mdss_dsi0_out>;
+			};
+		};
+	};
+};
+
+&mdss_dsi0_out {
+	data-lanes = <0 1 2 3>;
+	remote-endpoint = <&panel_in>;
+};
+
+&mdss_dsi0_phy {
 	status = "disabled";
 };
 
@@ -331,7 +372,7 @@
 	vmmc-supply = <&pm6125_l22a>;
 	vqmmc-supply = <&pm6125_l5a>;
 
-	status = "disabled";
+	status = "okay";
 };
 
 &soc {
@@ -399,4 +440,28 @@
 
 &usb_qmpphy_out {
 	remote-endpoint = <&pmi632_ss_in>;
+};
+&qupv3_id_0 {
+	status = "okay";
+};
+
+&gpi_dma0 {
+	status = "okay";
+};
+
+&pm6125_rtc {
+	status = "okay";
+};
+
+&i2c2 {
+	status = "okay";
+	clock-frequency = <400000>;
+
+	novatek@62 {
+		compatible = "novatek,NVT-ts";
+		reg = <0x63>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <50 IRQ_TYPE_LEVEL_LOW>;
+		reset-gpios = <&tlmm 47 GPIO_ACTIVE_LOW>;
+	};
 };
