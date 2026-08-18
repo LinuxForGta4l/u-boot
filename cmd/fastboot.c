@@ -15,6 +15,24 @@
 #include <watchdog.h>
 #include <linux/printk.h>
 #include <linux/stringify.h>
+#include <button.h>
+#include <time.h>
+
+static bool fastboot_power_pressed(void)
+{
+	static ulong last_check;
+	struct udevice *dev;
+	ulong now = get_timer(0);
+
+	if (now - last_check < 100)
+		return false;
+	last_check = now;
+
+	if (button_get_by_label("Power Button", &dev))
+		return false;
+
+	return button_get_state(dev) == BUTTON_ON;
+}
 
 #if CONFIG_IS_ENABLED(NET_LEGACY)
 static int do_fastboot_udp(int argc, char *const argv[],
@@ -93,6 +111,9 @@ static int do_fastboot_usb(int argc, char *const argv[],
 	if (ret)
 		return ret;
 
+	if (IS_ENABLED(CONFIG_BUTTON))
+		puts("Hold the power button to exit fastboot mode.\n");
+
 	if (!g_dnl_board_usb_cable_connected()) {
 		puts("\rUSB cable not detected.\n" \
 		     "Command exit.\n");
@@ -104,6 +125,8 @@ static int do_fastboot_usb(int argc, char *const argv[],
 		if (g_dnl_detach())
 			break;
 		if (ctrlc())
+			break;
+		if (IS_ENABLED(CONFIG_BUTTON) && fastboot_power_pressed())
 			break;
 		schedule();
 		dm_usb_gadget_handle_interrupts(udc);

@@ -56,6 +56,7 @@
 #define REG_DIG_VIN_VIN0       0
 
 #define REG_DIG_PULL_CTL       0x42
+#define REG_DIG_PULL_UP_30     0x0
 #define REG_DIG_PULL_NO_PU     0x5
 
 #define REG_LV_MV_OUTPUT_CTL	0x44
@@ -127,11 +128,16 @@ static int qcom_gpio_set_direction(struct udevice *dev, unsigned int offset,
 
 	_qcom_gpio_set_direction(dev, offset, input, value);
 
-	/* Set the right pull (no pull) */
-	ret = pmic_reg_write(plat->pmic, gpio_base + REG_DIG_PULL_CTL,
-			     REG_DIG_PULL_NO_PU);
+	/* Preserve a pull-up configured by pinctrl (e.g. gpio-keys) */
+	ret = pmic_reg_read(plat->pmic, gpio_base + REG_DIG_PULL_CTL);
 	if (ret < 0)
 		return ret;
+	if (ret != REG_DIG_PULL_UP_30) {
+		ret = pmic_reg_write(plat->pmic, gpio_base + REG_DIG_PULL_CTL,
+				     REG_DIG_PULL_NO_PU);
+		if (ret < 0)
+			return ret;
+	}
 
 	/* Configure output pin drivers if needed */
 	if (!input) {
@@ -364,6 +370,7 @@ U_BOOT_DRIVER(qcom_pmic_gpio) = {
 static const struct pinconf_param qcom_pmic_pinctrl_conf_params[] = {
 	{ "output-high", PIN_CONFIG_OUTPUT_ENABLE, 1 },
 	{ "output-low", PIN_CONFIG_OUTPUT, 0 },
+	{ "bias-pull-up", PIN_CONFIG_BIAS_PULL_UP, 1 },
 };
 
 static int qcom_pmic_pinctrl_get_pins_count(struct udevice *dev)
@@ -386,6 +393,13 @@ static const char *qcom_pmic_pinctrl_get_pin_name(struct udevice *dev, unsigned 
 static int qcom_pmic_pinctrl_pinconf_set(struct udevice *dev, unsigned int selector,
 					 unsigned int param, unsigned int arg)
 {
+	struct qcom_pmic_gpio_data *plat = dev_get_plat(dev);
+	uint32_t gpio_base = plat->pid + REG_OFFSET(selector);
+
+	if (param == PIN_CONFIG_BIAS_PULL_UP)
+		return pmic_reg_write(plat->pmic, gpio_base + REG_DIG_PULL_CTL,
+				      REG_DIG_PULL_UP_30);
+
 	/* We only support configuring the pin as an output, either low or high */
 	return _qcom_gpio_set_direction(dev, selector, false,
 					param == PIN_CONFIG_OUTPUT_ENABLE);

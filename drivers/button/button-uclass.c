@@ -8,6 +8,7 @@
 #define LOG_CATEGORY UCLASS_BUTTON
 
 #include <button.h>
+#include <cli.h>
 #include <dm.h>
 #include <dm/uclass-internal.h>
 #include <dt-bindings/input/linux-event-codes.h>
@@ -42,11 +43,16 @@ static int button_remap_phone_keys(int code)
 {
 	switch (code) {
 	case KEY_VOLUMEUP:
-		return KEY_UP;
+		return CTL_CH('p'); /* bootmenu "up" */
+	case KEY_UP:
+		return CTL_CH('p'); /* pmic driver already converted */
 	case KEY_VOLUMEDOWN:
-		return KEY_DOWN;
+		return CTL_CH('n'); /* bootmenu "down" */
+	case KEY_DOWN:
+		return CTL_CH('n'); /* pmic driver already converted */
 	case KEY_POWER:
-		return KEY_ENTER;
+	case KEY_ENTER:
+		return '\n';       /* bootmenu "select" */
 	default:
 		return code;
 	}

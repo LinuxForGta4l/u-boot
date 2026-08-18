@@ -521,6 +521,14 @@ config CMD_BOOTMENU
 	help
 	  Add an ANSI terminal boot menu command.
 
+config BOOTMENU_EXIT
+	bool "bootmenu: add Exit entry"
+	depends on CMD_BOOTMENU
+	help
+	  Add a "0. Exit" entry at the end of the boot menu that quits
+	  back to the U-Boot shell. Disable on devices where the menu is
+	  the only user interface (no keyboard).
+
 config CMD_ADTIMG
 	bool "adtimg"
 	help

@@ -28,6 +28,21 @@
 	#size-cells = <0x02>;
 	qcom,board-id = <0x1000b 0x00>;
 
+	gpio-keys {
+		compatible = "gpio-keys";
+		label = "gpio-keys";
+		pinctrl-names = "default";
+		pinctrl-0 = <&vol_up_n>;
+
+		vol_up {
+			label = "vol_up";
+			gpios = <&pm6125_gpios 5 GPIO_ACTIVE_LOW>;
+			linux,input-type = <1>;
+			linux,code = <115>; /* KEY_VOLUMEUP */
+			debounce-interval = <15>;
+		};
+	};
+
 	memory@40000000 {
 		device_type = "memory";
 		reg = <0x0 0x40000000 0x0 0xc0000000>;
@@ -42,7 +57,7 @@
 		#size-cells = <2>;
 		ranges;
 
-		bootargs = "console=tty0 clk_ignore_unused pd_ignore_unused fbcon=rotate:1 nr_cpus=1 nokaslr loglevel=7 pmos.stowaway pmos.root=/dev/mmcblk1p1 pmos_rootfsopts=defaults";
+		bootargs = "console=tty0 clk_ignore_unused pd_ignore_unused fbcon=rotate:1 nr_cpus=1 nokaslr loglevel=7 pmos.stowaway systemd.gpt_auto=0 pmos.root=/dev/mmcblk1p1 pmos_rootfsopts=defaults";
 
 		stdout-path = "framebuffer0";
 
@@ -292,32 +307,30 @@
 };
 
 &mdss {
-	/* The msm DRM driver probes the display pipeline and blanks the
-	 * panel, killing the simple-framebuffer scanout left by the
-	 * bootloader. Keep it disabled so fbcon + swrast (pure software
-	 * rendering) drive the display. */
-	status = "disabled";
+	status = "okay";
 };
 
 &gpu {
-	/* Adreno GPU + msm DRM not yet validated on this panel; keep the
-	 * working software-rendering path (mdss disabled) until then. */
-	status = "disabled";
+	status = "okay";
+
+	zap-shader {
+		firmware-name = "qcom/qrb4210/a610_zap.mbn";
+	};
 };
 
 &mdss_dsi0 {
 	vdda-supply = <&pm6125_l18a>;
-	status = "disabled";
+	status = "okay";
 
 	panel: panel@0 {
 		compatible = "samsung,gta4l-nt36523-lide-hsd", "novatek,nt36523w";
 		reg = <0>;
 
-		reset-gpios = <&tlmm 81 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&tlmm 82 GPIO_ACTIVE_LOW>;
 		vddio-supply = <&pm6125_l9a>;
 
 		pinctrl-names = "default";
-		pinctrl-0 = <&mdss_dsi_n>;
+		pinctrl-0 = <&te_irq &mdss_dsi_n>;
 
 		rotation = <180>;
 
@@ -335,7 +348,7 @@
 };
 
 &mdss_dsi0_phy {
-	status = "disabled";
+	status = "okay";
 };
 
 &sdhc_1 {
@@ -404,8 +417,15 @@
 		bias-pull-up;
 	};
 
-	mdss_dsi_n: mdss-dsi-n-state {
+	te_irq: te-irq-state {
 		pins = "gpio81";
+		function = "mdp_vsync";
+		drive-strength = <2>;
+		bias-pull-down;
+	};
+
+	mdss_dsi_n: mdss-dsi-n-state {
+		pins = "gpio82";
 		function = "gpio";
 		drive-strength = <8>;
 		bias-disable;
@@ -457,11 +477,24 @@
 	status = "okay";
 	clock-frequency = <400000>;
 
-	novatek@62 {
+	novatek@63 {
 		compatible = "novatek,NVT-ts";
 		reg = <0x63>;
 		interrupt-parent = <&tlmm>;
 		interrupts = <50 IRQ_TYPE_LEVEL_LOW>;
 		reset-gpios = <&tlmm 47 GPIO_ACTIVE_LOW>;
 	};
+};
+
+&remoteproc_adsp {
+	status = "okay";
+	firmware-name = "qcom/qcm2290/adsp.mbn";
+};
+
+&adsp_smp2p_out {
+	status = "okay";
+};
+
+&adsp_smp2p_in {
+	status = "okay";
 };

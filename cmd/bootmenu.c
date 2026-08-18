@@ -128,11 +128,8 @@ static char *bootmenu_choice_entry(void *data)
 				iter = iter->next;
 			return iter->key;
 		case BKEY_QUIT:
-			/* Quit by choosing the last entry */
-			iter = menu->first;
-			while (iter->next)
-				iter = iter->next;
-			return iter->key;
+			/* Quit is disabled; regenerate menu */
+			return NULL;
 		default:
 			break;
 		}
@@ -416,7 +413,7 @@ static struct bootmenu_data *bootmenu_create(int uefi, int delay)
 #endif
 
 	/* Add Exit entry at the end */
-	if (i <= MAX_COUNT - 1) {
+	if (i <= MAX_COUNT - 1 && IS_ENABLED(CONFIG_BOOTMENU_EXIT)) {
 		entry = malloc(sizeof(struct bootmenu_entry));
 		if (!entry)
 			goto cleanup;
@@ -589,7 +586,8 @@ static enum bootmenu_ret bootmenu_show(int uefi, int delay)
 		command = strdup(iter->command);
 
 		/* last entry exits bootmenu */
-		if (iter->num == iter->menu->count - 1) {
+		if (IS_ENABLED(CONFIG_BOOTMENU_EXIT) &&
+		    iter->num == iter->menu->count - 1) {
 			ret = BOOTMENU_RET_QUIT;
 			goto cleanup;
 		}

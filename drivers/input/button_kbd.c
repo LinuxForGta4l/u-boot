@@ -26,6 +26,7 @@
 struct button_kbd_priv {
 	struct input_config *input;
 	u32 button_size;
+	struct udevice **buttons;
 	u32 *old_state;
 };
 
@@ -62,7 +63,21 @@ static int button_kbd_start(struct udevice *dev)
 	}
 
 	priv->button_size = i;
+	priv->buttons = calloc(i, sizeof(struct udevice *));
 	priv->old_state = calloc(i, sizeof(int));
+	if (!priv->buttons || !priv->old_state)
+		return -ENOMEM;
+
+	/* Record devices in the same order the poll loop will see them */
+	i = 0;
+	uclass_foreach_dev(button_gpio_devp, uc) {
+		struct button_uc_plat *uc_plat = dev_get_uclass_plat(button_gpio_devp);
+
+		if (!uc_plat->label)
+			continue;
+		if (i < priv->button_size)
+			priv->buttons[i++] = button_gpio_devp;
+	}
 
 	return 0;
 }
@@ -71,14 +86,13 @@ int button_read_keys(struct input_config *input)
 {
 	struct button_kbd_priv *priv = dev_get_priv(input->dev);
 	struct udevice *button_gpio_devp;
-	struct uclass *uc;
-	int i = 0;
-	u32 code, state, state_changed = 0;
+	int i;
 
-	uclass_id_foreach_dev(UCLASS_BUTTON, button_gpio_devp, uc) {
-		struct button_uc_plat *uc_plat = dev_get_uclass_plat(button_gpio_devp);
-		/* Ignore the top-level button node */
-		if (!uc_plat->label)
+	for (i = 0; i < priv->button_size; i++) {
+		u32 code, state, state_changed;
+
+		button_gpio_devp = priv->buttons[i];
+		if (!button_gpio_devp)
 			continue;
 		code = button_get_code(button_gpio_devp);
 		if (!code)
@@ -88,11 +102,14 @@ int button_read_keys(struct input_config *input)
 		state_changed = state != priv->old_state[i];
 
 		if (state_changed) {
-			debug("%s: %d\n", uc_plat->label, code);
+			debug("%s: %d\n", button_gpio_devp->name, code);
 			priv->old_state[i] = state;
-			input_add_keycode(input, code, state);
+			if (state == BUTTON_ON) {
+				/* Raw ASCII char straight to the fifo, no keycode xlate */
+				input->fifo_in = (input->fifo_in + 1) % INPUT_BUFFER_LEN;
+				input->fifo[input->fifo_in] = (uchar)code;
+			}
 		}
-		i++;
 	}
 	return 0;
 }

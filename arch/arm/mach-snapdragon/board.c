@@ -336,8 +336,8 @@ static int get_cmdline_option(const char *cmdline, const char *key, char *out, i
 		return -ENOENT;
 
 	len = p_end - p;
-	if (len > out_len)
-		len = out_len;
+	if (len > out_len - 1)
+		len = out_len - 1;
 
 	strncpy(out, p, len);
 	out[len] = '\0';
@@ -366,15 +366,15 @@ static const char *get_cmdline(void)
 void qcom_set_serialno(void)
 {
 	const char *cmdline = get_cmdline();
-	char serial[32];
+	char serial[32] = {0};
 
 	if (!cmdline) {
 		log_debug("Failed to get bootargs\n");
 		return;
 	}
 
-	get_cmdline_option(cmdline, "androidboot.serialno=", serial, sizeof(serial));
-	if (serial[0] != '\0')
+	if (!get_cmdline_option(cmdline, "androidboot.serialno=", serial,
+				sizeof(serial)))
 		env_set("serial#", serial);
 }
 
@@ -485,6 +485,7 @@ static void configure_env(void)
 	snprintf(dt_path, sizeof(dt_path), "qcom/%s-%s.dtb",
 		 env_get("soc"), env_get("board"));
 	env_set("fdtfile", dt_path);
+	env_set("platform", env_get("soc"));
 
 	qcom_set_serialno();
 }

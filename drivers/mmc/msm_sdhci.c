@@ -49,6 +49,7 @@ struct msm_sdhc {
 	struct sdhci_host host;
 	void *base;
 	struct clk_bulk clks;
+	struct udevice *vmmc;
 	struct udevice *vqmmc;
 };
 
@@ -207,6 +208,16 @@ static int msm_sdc_probe(struct udevice *dev)
 	ret = msm_sdc_clk_init(dev);
 	if (ret)
 		return ret;
+
+	/* Get the vmmc regulator and enable it if available */
+	device_get_supply_regulator(dev, "vmmc-supply", &prv->vmmc);
+	if (prv->vmmc) {
+		ret = regulator_set_enable_if_allowed(prv->vmmc, true);
+		if (ret) {
+			printf("Failed to enable the VMMC regulator\n");
+			return ret;
+		}
+	}
 
 	/* Get the vqmmc regulator and enable it if available */
 	device_get_supply_regulator(dev, "vqmmc-supply", &prv->vqmmc);
