@@ -28,6 +28,7 @@
 #include <linux/sizes.h>
 #include <lmb.h>
 #include <malloc.h>
+#include <mmc.h>
 #include <fdt_support.h>
 #include <usb.h>
 #include <sort.h>
@@ -509,6 +510,15 @@ void qcom_show_boot_source(void)
 
 void __weak qcom_late_init(void)
 {
+	struct mmc *mmc;
+	char buf[12];
+
+	mmc = find_mmc_device(0);
+	if (mmc && !mmc_init(mmc)) {
+		snprintf(buf, sizeof(buf), "%08x",
+			 mmc->cid[2] << 16 | mmc->cid[3] >> 16);
+		env_set("serial#", buf);
+	}
 }
 
 #define KERNEL_COMP_SIZE	SZ_64M
