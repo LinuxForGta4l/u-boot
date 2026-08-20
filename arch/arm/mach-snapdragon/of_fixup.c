@@ -213,6 +213,8 @@ static void fixup_usb_nodes(struct device_node *root)
 		flat = false;
 		/* First check for the old DT format with glue node then the new flattened format */
 		tmp = of_find_compatible_node(glue_np, NULL, "qcom,dwc3");
+		if (!tmp)
+			tmp = of_find_compatible_node(glue_np, NULL, "qcom,dwc-usb3-msm");
 		if (!tmp) {
 			tmp = of_find_compatible_node(glue_np, NULL, "qcom,snps-dwc3");
 			flat = !!tmp;

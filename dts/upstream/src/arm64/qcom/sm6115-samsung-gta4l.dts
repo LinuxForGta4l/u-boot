@@ -439,6 +439,13 @@
 
 &usb {
 	status = "okay";
+	qcom,select-utmi-as-pipe-clk;
+};
+
+&usb_dwc3 {
+	phys = <&usb_hsphy>;
+	phy-names = "usb2-phy";
+	maximum-speed = "high-speed";
 };
 
 &usb_dwc3_hs {
@@ -453,9 +460,7 @@
 };
 
 &usb_qmpphy {
-	vdda-phy-supply = <&pm6125_l4a>;
-	vdda-pll-supply = <&pm6125_l12a>;
-	status = "okay";
+	status = "disabled";
 };
 
 &usb_qmpphy_out {
